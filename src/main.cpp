@@ -1,149 +1,270 @@
-#include <iostream>
-#include <string>
-#include "./config/config.hpp"
-#include "./location/location.hpp"
-#include <cstring>
-#include <cstdlib>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-using namespace std;
+#include "./server/server.hpp"
 
-// void print_config()
-// {
-//     Config conf;
-//     conf.parse_config();
-//     cout <<  conf.getServName() << "\n";
-//     cout << conf.getPort() << "\n";
-//     cout << conf.getIp() << "\n";
-//     try{
+#define MAX_CLIENT 10
+#define MAX_SERVER 3
 
-//     map<string, string> error = conf.getErrors();
-//     cout << error["403"] << "\n";
-//     cout << error["404"] << "\n";
-//     cout << error["405"] << "\n";
-//     cout << error["413"] << "\n";
-//     cout << error["500"] << "\n";
-//     // cout <<  << "\n";
-//     }
-//     catch(exception &error)
-//     {
-//         cout << error.what();
-//     }
-
-//     map<string,Location *>  loca = conf.getLocation();
-//     cout << loca["/potato/"]->getautoIndex();
-//     cout << loca["/"]->getautoIndex();
-
-// }
 int main()
 {
-    int socket_server = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_server < 0)
-    {
-        cerr << "failed to create socket server\n";
-        return 1; // Return an error code
-    }
-
-    struct sockaddr_in server_add;
-    server_add.sin_family = AF_INET;
-    server_add.sin_port = htons(5000);
-    server_add.sin_addr.s_addr = inet_addr("127.0.0.2");
-    int reuse = 1;
-    if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
-    {
-        cerr << "failed to set socket options\n";
-        close(socket_server);
-        return 1; // Return an error code
-    }
-    // Check for bind error
-    if (bind(socket_server, (struct sockaddr *)&server_add, sizeof(server_add)) < 0)
-    {
-        cerr << "failed to bind socket server\n";
-        close(socket_server);
-        return 1; // Return an error code
-    }
-
-    // show ip and port that assigned to the socket
-    char ip_add[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN is the maximum length of an IPv4 address
-    inet_ntop(AF_INET, &server_add.sin_addr, ip_add, sizeof(ip_add));
-    int port_add = ntohs(server_add.sin_port);
-    cout << "IP Address: " << ip_add << "\n";
-    cout << "Port: " << port_add << "\n";
-
-    listen(socket_server, 10);
-
-    while(1)
-    {
-
-    sockaddr_in client_add;
-    socklen_t add_len = sizeof(client_add);
-    int client_socket = accept(socket_server, (struct sockaddr *)&client_add, &add_len);
-    if (client_socket < 0)
-    {
-        cerr << "failed to accept connection\n";
-        close(socket_server);
-        return 1; // Return an error code
-    }
-
-    // Continue with your code...
-    char buffer[1000];
-    int flags = fcntl(client_socket, F_GETFL, 0);
-if (flags == -1) {
-    cerr << "Error getting socket flags\n";
-    close(client_socket);
-    return 1;
+   Config conf;
+   Server server(&conf);
 }
 
-if (fcntl(client_socket, F_SETFL, flags | O_NONBLOCK) == -1) {
-    cerr << "Error setting socket to non-blocking mode\n";
-    close(client_socket);
-    return 1;
-}
+// int main()
+// {
+//     int serverSocket , clientSocket;
+//     struct sockaddr_in serverSocketser;
+//     struct sockaddr_in sockClient;
+//     fd_set fds, writefds, readfds;
+//     int clientSockets[MAX_CLIENT] = {0};
 
-// Read with non-blocking socket
-ssize_t bytesRead = read(client_socket, buffer, sizeof(buffer));
+//     socklen_t addrSize = sizeof(serverSocketser);
+//     // CREATE SOCKET SERVER
+//     if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+//     {
+//         perror("socket");
+//         exit(EXIT_FAILURE);
+//     }
+//     if ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+//     {
+//         perror("socket");
+//         exit(EXIT_FAILURE);
+//     }
 
-if (bytesRead > 0) {
-    // Process the received data
-    cout << "Received data: " << buffer << endl;
-} else if (bytesRead == 0) {
-    // Connection closed by the client
-    cout << "Connection closed by the client" << endl;
-    close(client_socket);
-} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-    // No data available for now
-} else {
-    cerr << "Error reading from client" << endl;
-    close(client_socket);
-}
-    cout << buffer << "\n";
-    
-    send(client_socket,"fuck u",6,0);
-    }
+//     int reuse = 1;
+//     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+//     {
+//         perror("setsockopt");
+//         close(serverSocket);
+//         exit(EXIT_FAILURE);
+//     } if (setsockopt(clientSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+//     {
+//         perror("setsockopt");
+//         close(serverSocket);
+//         exit(EXIT_FAILURE);
+//     }
 
-    close(socket_server);
+//     // SETUP SERVER ADDRESS
+//     serverSocketser.sin_family = AF_INET;
+//     serverSocketser.sin_addr.s_addr = INADDR_ANY;
+//     serverSocketser.sin_port = htons(8080);
 
-    return 0; // Return 0 on success
-}
+//     sockClient.sin_family = AF_INET;
+//     sockClient.sin_addr.s_addr = INADDR_ANY;
+//     sockClient.sin_port = htons(5000);
+//     // RESUSE ADD
 
-// int main() {
-//     // Assuming you have a sockaddr_in structure that represents the server address
-//     struct sockaddr_in serverAddr;
-//     serverAddr.sin_family = AF_INET;
-//     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); // Replace with your actual IP address
-//     serverAddr.sin_port = htons(5000); // Replace with your actual port number
+//     if (bind(serverSocket, (struct sockaddr *)&serverSocketser, sizeof(serverSocketser)) == -1)
+//     {
+//         perror("bind5");
+//         close(serverSocket);
+//         exit(EXIT_FAILURE);
+//     }
+//     if (bind(clientSocket, (struct sockaddr *)&sockClient, sizeof(sockClient)) == -1)
+//     {
+//         perror("bind");
+//         close(clientSocket);
+//         exit(EXIT_FAILURE);
+//     }
 
-//     // Convert binary IP address to human-readable string
-//     char ipString[INET_ADDRSTRLEN];
-//     inet_ntop(AF_INET, &(serverAddr.sin_addr), ipString, INET_ADDRSTRLEN);
+//     // LISTEN FOR INCOMING CONNECTION
+//     char ip[50];
+//     inet_ntop(AF_INET, &serverSocketser, ip, addrSize);
+//     cout << "IP address: " << ip << "\n";
+//     cout << "PORT: " << ntohs(serverSocketser.sin_port) << "\n";
+//     cout << "Server listening on port " << ntohs(serverSocketser.sin_port) << " ....\n";
+//     cout << "im here";
+//     cout << serverSocket;
+//     if (listen(serverSocket, 5) < 0)
+//     {
+//         perror("listen");
+//         close(serverSocket);
+//         exit(EXIT_FAILURE);
+//     }
+//     char ip1[50];
+//     inet_ntop(AF_INET, &sockClient, ip1, addrSize);
+//     cout << "IP1 address: " << ip << "\n";
+//     cout << "PORT: " << ntohs(sockClient.sin_port) << "\n";
+//     cout << "Server listening on port " << ntohs(sockClient.sin_port) << " ....\n";
+//     cout << "im here";
+//     if (listen(clientSocket, 5) < 0)
+//     {
+//         perror("listen");
+//         close(serverSocket);
+//         exit(EXIT_FAILURE);
+//     }
+//     cout << "liset";
 
-//     // Convert network-byte order port to host-byte order
-//     int port = ntohs(serverAddr.sin_port);
+//     // int newSocket = accept(serverSocket, (struct sockaddr *)&serverSocketser, &addrSize);
+//     // if (newSocket == -1)
+//     // {
+//     //     perror("accept");
+//     // }
+//     // else
+//     // {
+//     //     cout << "New connection socket: " << newSocket << "\n";
+//     //     for (int i = 0; i < MAX_CLIENT; i++)
+//     //     {
+//     //         int client = clientSockets[i];
+//     //         if (client == 0)
+//     //         {
+//     //             clientSockets[i] = newSocket;
+//     //             break;
+//     //         }
+//     //     }
+//     // }
+//     // GET ADDRESS,PORT THAT ASSIGN FOR SOCKET
 
-//     // Print the information
-//     std::cout << "Server IP: " << ipString << std::endl;
-//     std::cout << "Server Port: " << port << std::endl;
+//     while (true)
+//     {
+//         FD_ZERO(&fds);
+//         FD_ZERO(&writefds);
+
+//         FD_SET(serverSocket, &fds);
+
+//         int maxSocket = serverSocket;
+//         for (int i = 0; i < MAX_CLIENT; i++)
+//         {
+//             int client = clientSockets[i];
+//             if (client > 0)
+//             {
+//                 FD_SET(client, &fds);
+//                 if (client > serverSocket)
+//                     maxSocket = client;
+//             }
+//         }
+//         struct timeval timeout;
+//         timeout.tv_sec = 1; // 5 seconds timeout
+//         timeout.tv_usec = 0;
+//         int result = select(maxSocket + 1, &fds, &writefds, NULL, &timeout);
+//         if (result == -1)
+//         {
+//             perror("select");
+//         }
+
+//         if (FD_ISSET(serverSocket, &fds))
+//         {
+//             int newSocket = accept(serverSocket, (struct sockaddr *)&serverSocketser, &addrSize);
+//             if (newSocket == -1)
+//             {
+//                 perror("accept");
+//             }
+//             else
+//             {
+//                 cout << "New connection socket: " << newSocket << "\n";
+//                 for (int i = 0; i < MAX_CLIENT; i++)
+//                 {
+//                     int client = clientSockets[i];
+//                     if (client == 0)
+//                     {
+//                         clientSockets[i] = newSocket;
+//                         break;
+//                     }
+//                 }
+//             }
+//         }
+
+//         for (int i = 0; i < MAX_CLIENT; i++)
+//         {
+//             int client = clientSockets[i];
+//             if (FD_ISSET(client, &fds))
+//             {
+//                 char buf[5000];
+//                 int result = read(client, buf, 5000);
+//                 if (result == 0)
+//                 {
+//                     cout << "Client that socket: " << client << " closed\n";
+//                     close(client);
+//                     clientSockets[i] = 0;
+//                 }
+//                 else if (result > 0)
+//                 {
+//                     cout << "Recieved request from: " << client << "\n";
+//                     cout << "       || \n";
+//                     cout << "       || \n";
+//                     cout << "       \\/ \n";
+//                     cout << buf << "\n";
+//                     cout << "       /\\ \n";
+//                     cout << "       || \n";
+//                     cout << "       || \n";
+//                 }
+//             }
+//         }
+//     }
+// }
+
+//     while (true) {
+//         FD_ZERO(&readfds);
+//         FD_SET(serverSocket, &readfds);
+
+//         int maxSocket = serverSocket;
+//         for (int i = 0; i < MAX_CLIENTS; ++i) {
+//             int clientSocket = clientSockets[i];
+//             if (clientSocket > 0) {
+//                 FD_SET(clientSocket, &readfds);
+//                 if (clientSocket > maxSocket) {
+//                     maxSocket = clientSocket;
+//                 }
+//             }
+//         }
+
+//         // Use select to monitor sockets for reading
+//         fd_set write;
+//         if (select(maxSocket + 1, &readfds, &write, nullptr, nullptr) == -1) {
+//             perror("Select failed");
+//             exit(EXIT_FAILURE);
+//         }
+
+//         // Check if there is a new incoming connection
+//         if (FD_ISSET(serverSocket, &readfds)) {
+//             if ((newSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &addrSize)) == -1) {
+//                 perror("Accept failed");
+//                 exit(EXIT_FAILURE);
+//             }
+
+//             std::cout << "New connection from " << inet_ntoa(clientAddr.sin_addr) << " on port " << ntohs(clientAddr.sin_port) << std::endl;
+
+//             // Add the new socket to the array of client sockets
+//             for (int i = 0; i < MAX_CLIENTS; ++i) {
+//                 if (clientSockets[i] == 0) {
+//                     clientSockets[i] = newSocket;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         // Check data from clients
+//         for (int i = 0; i < MAX_CLIENTS; ++i) {
+//             int clientSocket = clientSockets[i];
+//             if (FD_ISSET(clientSocket, &readfds)) {
+//                 char buffer[BUFFER_SIZE] = {0};
+//                 ssize_t bytesRead = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+//                 if (bytesRead <= 0) {
+//                     // Connection closed or error
+//                     std::cout << "Connection from socket " << clientSocket << " closed" << std::endl;
+//                     close(clientSocket);
+//                     clientSockets[i] = 0;
+//                 } else {
+//                     std::cout << "f";
+//                     // Process the received data and send a response
+//                     std::cout << "Received from socket " << clientSocket << ": \n" << buffer << std::endl;
+//                     std::cout << "send => \n";
+//                     std::string str = buffer;
+//                     if(str.find("/favicon.ico") != std::string::npos)
+//                         send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 76\r\n\r\n<html><head><title>check</title></head></html>", 135, 0);
+//                     else
+//                     send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
+//                 // <html>
+//                 }
+//             }
+//         }
+
+//            for (int i = 0; i < MAX_CLIENTS; ++i) {
+//             int clientSocket = clientSockets[i];
+//             if (FD_ISSET(clientSocket, &write)) {
+//                     send(clientSocket, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
+//             }
+//         }
+//     }
 
 //     return 0;
 // }

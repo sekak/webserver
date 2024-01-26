@@ -16,8 +16,8 @@ class Server
 private:
 public:
     ~Server();
-    Server(Config &conf);
-    void initiate_server(Config &config);
+    Server(Config *conf);
+    void initiate_server(Config *conf);
 };
 
 #endif

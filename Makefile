@@ -3,7 +3,7 @@ GREEN = \033[0;32m
 REGULAR = \033[0;37m
 
 Name = webserv
-file = main.cpp  
+file = main.cpp config/config.cpp location/location.cpp utils/utils.cpp server/server.cpp
 
 OBJ_DIR = object
 SRC_DIR = src
@@ -12,7 +12,7 @@ srcs = $(addprefix src/, $(file))
 
 RM = rm -rf 
 CC = c++
-CFLAG = -Wall -Wextra -Werror
+CFLAG = 
 
 $(Name): $(objects)
 	@echo "$(RED) __/\__ "

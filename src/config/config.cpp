@@ -1,6 +1,6 @@
-#include "config.hpp"
+#include "./config.hpp"
 
-Config::Config() : _count_braces(0) {}
+Config::Config() : _count_braces(0) {parse_config();}
 Config::~Config() {}
 
 // setters
@@ -70,6 +70,14 @@ string Config::check_is_file()
     exit(1);
 }
 
+void    check_file_exist(string content)
+{
+    DIR *dir = opendir(content.c_str());
+    if(!dir)
+        Error("not found root or upload (config)\n");
+}
+
+
 void Config::check_location(string file_config)
 {
     std::vector<std::string> vec;
@@ -118,50 +126,70 @@ void Config::check_location(string file_config)
                         ss >> content;
                     }
                     content.pop_back();
+                    locationPtr->setMethods(content);
                     if (content != "GET" && content != "POST" && content != "DELETE")
                         Error("check methods (config)\n");
-                    locationPtr->setMethods(content);
                 }
-                else if (content == "root")
+                else if (content == "root" || content == "root;")
                 {
-                    ss >> content;
-                    content.pop_back();
-                    if (content.empty())
+                    if(content == "root;")
                         Error("check root (config)\n");
-                    locationPtr->setRoot(content);
-                }
-                else if (content == "upload_dir")
-                {
                     ss >> content;
+                    if(content == ";" || content.find(";") == string::npos)
+                        Error("check root (config)\n");
                     content.pop_back();
-                    if (content.empty())
-                        Error("check upload_dir (config)\n");
-                    locationPtr->setUploadDir(content);
+                    locationPtr->setRoot(content);
+                    if (locationPtr->getRoot().empty())
+                        Error("check root (config)\n");
+                    check_file_exist(content);
+                    
                 }
-                else if (content == "index")
+                else if (content == "upload_dir" || content == "upload_dir;")
                 {
+                    if(content == "upload_dir;")
+                        Error("check upload_dir (config)\n");
                     ss >> content;
-                    while (content.find(";") == string::npos)
+                    if(content == ";" || content.find(";") == string::npos)
+                        Error("check upload_dir (config)\n");
+                    content.pop_back();
+                    locationPtr->setUploadDir(content);
+                    if (locationPtr->getUploadDir().empty())
+                        Error("check upload_dir (config)\n");
+                    check_file_exist(content);
+                }
+                else if (content == "index" || content == "index;")
+                {
+                    if(content == "index;")
+                        Error("check index (config)\n");
+                    ss >> content;
+                    if(content == ";")
+                        Error("check index (config)\n");
+                    while(1)
                     {
+                        if(content.find(";") != string::npos)
+                        {
+                            content.pop_back();
+                            locationPtr->setIndexes(content);
+                            break;
+                        }
                         locationPtr->setIndexes(content);
                         ss >> content;
                     }
-                    content.pop_back();
-                    if (content.empty())
-                        Error("check index (config)\n");
-                    locationPtr->setIndexes(content);
+
                 }
                 else if (content == "cgi")
                 {
                     while (content.find(";") == string::npos)
                     {
-                        locationPtr->setCgi(content);
                         ss >> content;
+                        if(content.find(";") == string::npos)
+                            locationPtr->setCgi(content);
                     }
-                    content.pop_back();
-                    if (content.empty())
-                        Error("check cgi (config)\n");
+                    if(content.find(";") != string::npos)
+                        content.pop_back();
                     locationPtr->setCgi(content);
+                    if (locationPtr->getCgi().size() != 2)
+                        Error("check cgi (config)\n");
                 }
                 else if (content == "}")
                     is_close = 0;
@@ -169,6 +197,8 @@ void Config::check_location(string file_config)
             }
             if (is_close)
                 Error("check braces location (config)\n");
+            // vector<string> i = locationPtr->getCgi();
+            // cout << i[0] << "  " << i[1] << "\n";
         }
     }
 }
@@ -224,6 +254,12 @@ void Config::check_content_config()
         Error("server_name, ip, port, error_page\n");
 }
 
+void                       Config::check_tab_location(string file_config)
+{
+
+}
+
+
 void Config::parse_config()
 {
     int i;
@@ -261,5 +297,6 @@ void Config::parse_config()
             Error("forget \";\" in (config)\n");
     }
     Conf_server(file_config);
+    check_tab_location(file_config);
     check_content_config();
 }

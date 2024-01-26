@@ -47,9 +47,11 @@ public:
 
     void                       parse_config();
     string                     check_is_file();
+    void                       check_tab_location(string file_config);
     void                       check_content_config();
     void                       Conf_server(string file_config);
     void                       check_location(string file_config);
+
 };
  
 
