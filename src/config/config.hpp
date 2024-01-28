@@ -2,6 +2,8 @@
 #define CONFIG_HPP
 
 using namespace std;
+#define BUFFER_SIZE 100
+
 
 #include <iostream>
 #include <dirent.h>
@@ -13,9 +15,13 @@ using namespace std;
 #include <iterator>
 #include <sstream>
 #include "../location/location.hpp"
+#include "../client/client.hpp"
+#include <cstring>
+#include <unistd.h>
 
 
 class Location; // class location each location in config
+class Client;
 
 class Config
 {
@@ -32,6 +38,7 @@ private:
     void                      setServName(string name);
     void                      setErrors(string path, string status_code);
     void                      setLocation(string path, Location *location);
+
     
     
 
@@ -52,9 +59,13 @@ public:
     void                       Conf_server(string file_config);
     void                       check_location(string file_config);
 
+    //REQUESTS
+    int                        _setClientReq(int sd);
+    map<int, Client*>          _clients;
+    map<int, Client*>          _getClientsReq();
+
 };
  
 
 std::vector<std::string> splitString(const std::string& input, const std::string& delimiter);
-
 #endif

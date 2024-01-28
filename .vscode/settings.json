@@ -9,6 +9,9 @@
         "initializer_list": "cpp",
         "cstdlib": "cpp",
         "type_traits": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "map": "cpp",
+        "bitset": "cpp",
+        "utility": "cpp"
     }
 }

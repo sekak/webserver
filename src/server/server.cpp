@@ -95,7 +95,7 @@ void Server::initiate_server(Config *conf)
 
         // cout << "\n\n*********select1*********\n\n";
         monitor = select(maxSocket + 1, &readfds, &writefds, NULL, NULL);
-        // cout << "\n\n*********select2*********\n\n";
+        cout << "*********select2*/*******";
 
         if (monitor < 0)
         {
@@ -121,7 +121,7 @@ void Server::initiate_server(Config *conf)
                 {
                     if (clientSockets[j] == 0)
                     {
-                        // cout << "\n\n*********accept*********\n\n";
+                        cout << newSocket <<"*********accept*********";
                         clientSockets[j] = newSocket;
                         break;
                     }
@@ -131,30 +131,24 @@ void Server::initiate_server(Config *conf)
 
         for (int i = 0; i < MAX_CLIENT; i++)
         {
+            map<int,Client *>  cli  = conf->_getClientsReq();
             if (FD_ISSET(clientSockets[i], &readfds))
             {
-                char buf[8000];
-                int f = read(clientSockets[i], &buf, 8000);
-                if (f > 0)
-                {
-                    cout << "recieved data: " << buf << "\n";
-                    cout << "1";
-                    // send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
-                }
-                else
-                {
-                    cout << "close ";
-                    close(clientSockets[i]);
-                    clientSockets[i] = 0;
-                    break;
-                }
+                    cout << cli.size() << "\n";
+                    if(conf->_setClientReq(clientSockets[i]))
+                    {
+                        cli.erase(clientSockets[i]);
+                        close(clientSockets[i]);
+                        clientSockets[i] = 0;
+                        break;
+                    }
             }
-            if (FD_ISSET(clientSockets[i], &writefds) && clientSockets[i] > 0)
+            else if (FD_ISSET(clientSockets[i], &writefds) && !cli.empty() && cli[clientSockets[i]]->_isFinished)
             {
-                // cout <<"\n*****************send************\n";
+                cout << "\n*********check*********" <<  "\n";
                 send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
             }
         }
-        // cout << "\n\n*********check*********"<< "\n\n";
+        
     }
 }

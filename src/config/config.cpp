@@ -1,7 +1,16 @@
 #include "./config.hpp"
 
 Config::Config() : _count_braces(0) {parse_config();}
-Config::~Config() {}
+Config::~Config() 
+{
+    map<int, Client*>  client = _clients;
+
+    for (map<int, Client*>::iterator  it = client.begin(); it != client.end(); it++)
+    {
+        delete it->second;
+    }
+    
+}
 
 // setters
 void Config::setServName(string name)
