@@ -95,7 +95,7 @@ void Server::initiate_server(Config *conf)
 
         // cout << "\n\n*********select1*********\n\n";
         monitor = select(maxSocket + 1, &readfds, &writefds, NULL, NULL);
-        cout << "*********select2*/*******";
+        // cout << "*********select2*/*******";
 
         if (monitor < 0)
         {
@@ -143,9 +143,9 @@ void Server::initiate_server(Config *conf)
                         break;
                     }
             }
-            else if (FD_ISSET(clientSockets[i], &writefds) && !cli.empty() && cli[clientSockets[i]]->_isFinished)
+            else
             {
-                cout << "\n*********check*********" <<  "\n";
+                // cout << "\n*********check*********" <<  "\n";
                 send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
             }
         }

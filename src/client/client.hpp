@@ -11,6 +11,7 @@ using namespace std;
 #include <cstddef> 
 #include <cstring>
 #include <iterator>
+#include <sstream>
 
 #define BUFFER_SIZE 100
 
@@ -27,6 +28,7 @@ public:
     void                setRequest(string req);
     string              getRequest();
     bool                _isFinished;
+    int                 _lengthPost;
     void                reuseBuffer();
 };
 

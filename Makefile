@@ -14,7 +14,7 @@ srcs = $(addprefix src/, $(file))
 
 RM = rm -rf 
 CC = c++
-CFLAG = 
+CFLAG = -fsanitize=address -g
 
 $(Name): $(objects)
 	@echo "$(RED) __/\__ "
