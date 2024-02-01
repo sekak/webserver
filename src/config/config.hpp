@@ -15,13 +15,17 @@ using namespace std;
 #include <iterator>
 #include <sstream>
 #include "../location/location.hpp"
+#include "../response/response.hpp"
 #include "../client/client.hpp"
+#include "../request/request.hpp"
 #include <cstring>
 #include <unistd.h>
 
 
 class Location; // class location each location in config
 class Client;
+class Request;
+class Response;
 
 class Config
 {
@@ -39,7 +43,7 @@ private:
     void                      setErrors(string path, string status_code);
     void                      setLocation(string path, Location *location);
 
-    
+    //requests
     
 
 public:
@@ -54,15 +58,21 @@ public:
 
     void                       parse_config();
     string                     check_is_file();
-    void                       check_tab_location(string file_config);
     void                       check_content_config();
+    void                       check_tab_location(string file_config);
     void                       Conf_server(string file_config);
     void                       check_location(string file_config);
 
     //REQUESTS
-    int                        _setClientReq(int sd);
     map<int, Client*>          _clients;
+    map<int, Request*>         _requests;
+    map<int, Response*>        _response;
     map<int, Client*>          _getClientsReq();
+    int                        _setClientReq(int sd);
+    void                       _set_response(int sd);
+
+
+
 
 };
  

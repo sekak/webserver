@@ -1,17 +1,17 @@
 {
     "files.associations": {
+        "ostream": "cpp",
         "array": "cpp",
-        "deque": "cpp",
-        "string": "cpp",
-        "unordered_map": "cpp",
-        "vector": "cpp",
+        "bitset": "cpp",
         "string_view": "cpp",
         "initializer_list": "cpp",
-        "cstdlib": "cpp",
-        "type_traits": "cpp",
+        "utility": "cpp",
+        "sstream": "cpp",
+        "string": "cpp",
         "*.tcc": "cpp",
-        "map": "cpp",
-        "bitset": "cpp",
-        "utility": "cpp"
+        "deque": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp"
     }
 }

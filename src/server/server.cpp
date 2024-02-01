@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include <fcntl.h>
 
 #define MAX_CLIENT 10
 #define MAX_SERVER 1
@@ -8,7 +9,10 @@ Server::Server(Config *conf)
     initiate_server(conf);
 }
 
-Server::~Server(){}
+Server::~Server()
+{
+
+}
 
 
 void Server::initiate_server(Config *conf)
@@ -122,6 +126,7 @@ void Server::initiate_server(Config *conf)
                     if (clientSockets[j] == 0)
                     {
                         cout << newSocket <<"*********accept*********";
+                        fcntl(newSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
                         clientSockets[j] = newSocket;
                         break;
                     }
@@ -134,7 +139,7 @@ void Server::initiate_server(Config *conf)
             map<int,Client *>  cli  = conf->_getClientsReq();
             if (FD_ISSET(clientSockets[i], &readfds))
             {
-                    cout << cli.size() << "\n";
+                    // cout << cli.size() << "\n";
                     if(conf->_setClientReq(clientSockets[i]))
                     {
                         cli.erase(clientSockets[i]);
@@ -143,12 +148,13 @@ void Server::initiate_server(Config *conf)
                         break;
                     }
             }
-            else
+            else if(cli[clientSockets[i]] && cli[clientSockets[i]]->_isFinished)
             {
-                // cout << "\n*********check*********" <<  "\n";
-                send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 14\r\n\r\n<h1>hello</h1>", 103, 0);
+                conf->_set_response(clientSockets[i]);
+                send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 13\r\n\r\n<h1>hello</h1>\r\n", 103, 0);
+                clientSockets[i] = 0;
             }
         }
-        
     }
+
 }

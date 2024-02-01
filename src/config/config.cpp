@@ -4,12 +4,16 @@ Config::Config() : _count_braces(0) {parse_config();}
 Config::~Config() 
 {
     map<int, Client*>  client = _clients;
+    map<int, Request*>  req = _requests;
 
     for (map<int, Client*>::iterator  it = client.begin(); it != client.end(); it++)
     {
         delete it->second;
     }
-    
+    for (map<int, Request*>::iterator  it = req.begin(); it != req.end(); it++)
+    {
+        delete it->second;
+    }
 }
 
 // setters
@@ -89,9 +93,9 @@ void    check_file_exist(string content)
 
 void Config::check_location(string file_config)
 {
-    std::vector<std::string> vec;
-    std::string str;
-    int is_close;
+    std::vector<std::string>            vec;
+    std::string                         str;
+    int                                 is_close;
 
     is_close = 1;
     ifstream stream(file_config);
@@ -148,6 +152,7 @@ void Config::check_location(string file_config)
                         Error("check root (config)\n");
                     content.pop_back();
                     locationPtr->setRoot(content);
+                    cout << content;
                     if (locationPtr->getRoot().empty())
                         Error("check root (config)\n");
                     check_file_exist(content);
@@ -308,4 +313,23 @@ void Config::parse_config()
     Conf_server(file_config);
     check_tab_location(file_config);
     check_content_config();
+}
+
+
+
+
+//response
+
+void Config::_set_response(int sd)
+{
+    if(_clients[sd])
+    {
+        if(!_response[sd])
+        {
+            // Response *res;
+            _response[sd] = new Response();
+        }
+        _response[sd]->_response_part(this,sd);
+        _clients.erase(sd);
+    }
 }

@@ -3,9 +3,14 @@ GREEN = \033[0;32m
 REGULAR = \033[0;37m
 
 Name = webserv
-file = main.cpp config/config.cpp location/location.cpp  config/request.cpp\
+file = main.cpp config/config.cpp \
+       location/location.cpp  \
+	   config/store_request.cpp\
        utils/utils.cpp server/server.cpp \
 	   client/client.cpp \
+	   request/request.cpp \
+	   response/response.cpp \
+	   response/return_response.cpp \
 
 OBJ_DIR = object
 SRC_DIR = src

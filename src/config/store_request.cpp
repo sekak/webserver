@@ -15,21 +15,26 @@ int Config::_setClientReq(int sd)
     {
         if (_clients[sd]->_isFinished)
         {
+            cout << "-----/***********finished/********";
             _clients[sd]->reuseBuffer();
             _clients[sd]->_isFinished = 0;
             _clients[sd]->_lengthPost = -1;
         }
         _clients[sd]->setRequest(buffer);
-        std::cout << "found";
+        if (_clients[sd]->_isFinished)
+        {
+            _requests[sd] = new Request(_clients[sd]->getRequest());
+            // cout << _clients[sd]->getRequest() << _clients[sd]->getRequest().size() << "\n\n";
+        }
     }
     else
     {
         _clients[sd] = new Client;
         _clients[sd]->setRequest(buffer);
-        std::cout << "not found\n";
+        // std::cout << "not found\n";
     }
-    if (_clients[sd]->_isFinished)
-        cout << _clients[sd]->getRequest() << _clients[sd]->getRequest().size() << "\n\n";
+    // if (_clients[sd]->_isFinished)
+    //     cout << _clients[sd]->getRequest() << _clients[sd]->getRequest().size() << "\n\n";
     return 0;
 }
 
