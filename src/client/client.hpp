@@ -12,24 +12,36 @@ using namespace std;
 #include <cstring>
 #include <iterator>
 #include <sstream>
+#include "../config/config.hpp"
+#include "../request/request.hpp"
 
-#define BUFFER_SIZE 100
+// #define BUFFER_SIZE 5000
 
+class Config;
+class Request;
 
 class Client
 {
 private:
-    string              _request;
 
 public:
     Client();
     ~Client();
+    string              _FullRequest;
 
-    void                setRequest(string req);
-    string              getRequest();
     bool                _isFinished;
     int                 _lengthPost;
+    string              getRequest();
+    void                setRequest(int fd, Config *conf);
     void                reuseBuffer();
+    int                 content_length;
+    int                 reset_values;
+    string              _method;
+    string              _body;
+
+
+    //getter
+
 };
 
 

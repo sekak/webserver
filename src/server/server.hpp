@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-
 class Config;
 class Response;
 
@@ -20,8 +19,7 @@ private:
 public:
     ~Server();
     Server(Config *conf);
-
-    void        initiate_server(Config *conf);
+    void initiate_server(Config *conf);
 };
 
 #endif

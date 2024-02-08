@@ -1,52 +1,79 @@
 #include "client.hpp"
 
-
-Client::Client(): _isFinished(0) , _lengthPost(-1) {}
+Client::Client() : _isFinished(0), _lengthPost(-1)
+{
+    _FullRequest = "";
+    content_length = 0;
+    reset_values = 0;
+}
 
 Client::~Client() {}
 
-void Client::setRequest(string req)
+void Client::setRequest(int fd, Config *conf)
 {
-    
-    cout << "\nfinished " << _isFinished << std::endl;
-    _request.append(req);
-
-    if(req.find("\r\n\r\n") != string::npos && _request.find("GET") != string::npos)
-        _isFinished  = 1;
-    else if(_request.find("POST") != string::npos)
+    int i = 0;
+    char buf[BUFFER_SIZE];
+    ofstream file("file"); // remove
+    int byte = read(fd, buf, BUFFER_SIZE - 1);
+    if (byte == 0 || byte < 0)
     {
-            stringstream ss(_request);
-            string str;
-            while(!ss.eof())
-            {
-                ss >> str;
-                if(str == "Content-Length:")
-                {
-                    ss >> str;
-                    _lengthPost = stoi(str);
-                    break;
-                }
-            }
+        conf->_clients[fd]->reset_values = 1;
     }
-    if(_lengthPost != -1 && _request.find("\r\n\r\n") !=string::npos)
+    int content = 0;
+    conf->_clients[fd]->_FullRequest.append(buf, byte);
+    file << conf->_clients[fd]->_FullRequest; // remove
+    int start_length = conf->_clients[fd]->_FullRequest.find("Content-Length: ");
+    if (start_length != string::npos && content == 0)
     {
-        int i = _request.find("\r\n\r\n");
-        std::string str =  _request.substr(i + 4);
-        if(_lengthPost == str.size())
+        while (conf->_clients[fd]->_FullRequest[start_length + 16 + i] != '\r')
         {
-            cout << _lengthPost <<"    "<< str.size();
-            _isFinished = 1;
+            content *= 10;
+            content += (conf->_clients[fd]->_FullRequest[start_length + 16 + i] - '0');
+            // cout << "===> " << content << endl; // remove
+            i++;
+        }
+        conf->_clients[fd]->content_length = content;
+        // content = 0;
+    }
+    if (conf->_clients[fd]->_FullRequest.find("\r\n\r\n-----") != string::npos && conf->_clients[fd]->_FullRequest.find("POST ") != string::npos)
+    {
+        int start = conf->_clients[fd]->_FullRequest.find("\r\n\r\n-----");
+        conf->_clients[fd]->content_length = conf->_clients[fd]->_FullRequest.substr(start + 4).size();
+        if (content == conf->_clients[fd]->content_length)
+        {
+            conf->_clients[fd]->_isFinished = 1;
+            conf->_clients[fd]->_method = "POST";
+            conf->_requestOfClient[fd] = new Request(conf, fd);
+        }
+        cout << "post " << conf->_clients[fd]->content_length << endl;
+    }
+    else if (conf->_clients[fd]->_FullRequest.find("\r\n\r\n") != string::npos && conf->_clients[fd]->_FullRequest.find("GET ") != string::npos)
+    {
+        conf->_clients[fd]->_isFinished = 1;
+        conf->_clients[fd]->_method = "GET";
+        conf->_requestOfClient[fd] = new Request(conf, fd);
+    }
+    else if (conf->_clients[fd]->_FullRequest.find("\r\n\r\n") != string::npos)
+    {
+        int start = conf->_clients[fd]->_FullRequest.find("\r\n\r\n");
+        int size = conf->_clients[fd]->_FullRequest.substr(start + 4).size();
+        if (size == conf->_clients[fd]->content_length)
+        {
+            cout << size << " " << conf->_clients[fd]->content_length << " other\n";
+            conf->_clients[fd]->_isFinished = 1;
+            conf->_clients[fd]->_method = "GET";
+            conf->_requestOfClient[fd] = new Request(conf, fd);
         }
     }
 }
 
 string Client::getRequest()
 {
-    return(_request);
+    return (_FullRequest);
 }
 
-
-void          Client::reuseBuffer()
+void Client::reuseBuffer()
 {
-        _request.clear();
+
+    _FullRequest.clear();
 }

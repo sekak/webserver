@@ -1,7 +1,14 @@
 #include "response.hpp"
+#include "../config/config.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <dirent.h>
 
 Response::Response()
 {
+    _code_status = 0;
+    _length = 0;
+    _type_of_content = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8";
 }
 Response::~Response() {}
 
@@ -36,9 +43,9 @@ string Response::_deletePartOfUrl(string url, int i, int len)
 Location *Response::_check_location(Config *conf, string path)
 {
     // CHECK LOCATION IF EXIST
-    map<string, Location *>             location;
-    int                                 len;
-    string                              url;
+    map<string, Location *>         location;
+    int                             len;
+    string                          url;
 
     location = conf->getLocation();
     len = 0;
@@ -48,76 +55,55 @@ Location *Response::_check_location(Config *conf, string path)
         return location[path];
     else if (location[path + "/"])
         return location[path + "/"];
-    else
+    location = conf->getLocation();
+    for (int i = 0; i < len; i++)
     {
-        for (int i = 0; i < len; i++)
+        url = _deletePartOfUrl(url, i, len);
+        for (map<string, Location *>::iterator it = location.begin(); it != location.end(); it++)
         {
-            url = _deletePartOfUrl(url, i, len);
-            for (map<string, Location *>::iterator it = location.begin(); it != location.end(); it++)
+            if (url == it->first || url + "/" == it->first)
             {
                 cout << "url: (" << url << ")"
-                     << "    it: (" << it->first << ")\n";
-                if (url == it->first || url + "/" == it->first)
-                {
-                    cout << "\n " << it->first << " +1\n";
-                    cout << "im not\n";
-                    return it->second;
-                }
+                 << "    it: (" << it->first << ")\n";
+                return it->second;
             }
         }
     }
     return 0;
 }
 
-vector<string>  Response::_generate_autoindex(DIR *dir, int sd)
-{
-    dirent              *entry;
-    vector<string>      vec;
-    int                 i;
 
-    i = 0;
-    while ((entry = readdir(dir)))
-    {
-        if (entry->d_name[0] != '.')
-        {
-            vec.push_back(entry->d_name);
-            i++;
-        }
-    }
-    return (vec);
+//check extension for video/mp4
+void    Response::check_extentsion(string name)
+{
+    if(name.find(".mp4") != string::npos)   
+        _type_of_content = "video/mp4";
+    
 }
 
-string Response::_generate_index(Location *location)
+void Response::_response_part(Config *conf, int fd)
 {
-    vector<string>  indexes = location->getIndexes();
-    for (int i = 0; i < indexes.size() && !indexes.empty(); i++)
+    // CHECK REQUEST FIRSTLY
+    map<int, Request *>     request;
+    Location                *location;
+    string                  url;
+    DIR                     *dir;
+    
+
+    request = conf->_requestOfClient;
+    if (request[fd])
     {
-        ifstream file( location->getRoot() + "/" + indexes[i]);
-        if(file.good())
+        // CHECK LOCATION, PATH OF REQUEST IF IS SAME THING IN LOCATION
+        location = _check_location(conf, request[fd]->getUrl());
+        if (!location)
         {
-            cout << indexes[i] << "9wd\n";
-            return location->getRoot() + "/" + indexes[i];
+            send(fd, "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 18\r\n\r\n<h1>Not location</h1>", 117, 0);
+            return;
         }
-    }
-    return "";
-}
-
-void Response::_response_part(Config *conf, int sd)
-{
-    map<int, Request *> request;
-    Location *location;
-    DIR *dir;
-    string url;
-
-    request = conf->_requests;
-    location = _check_location(conf, request[sd]->getUrl());
-
-    if (!location)
-        _response_errors_(conf, sd, 404);
-    else
-    {
         // check if url found in root
-        url = location->getRoot() + request[sd]->getUrl();
+        url = location->getRoot() + request[fd]->getUrl();
+        check_extentsion(request[fd]->getUrl());
+        cout << url << endl;
         ifstream file(url);
         dir = opendir(url.c_str());
         if (dir || file.good())
@@ -126,30 +112,32 @@ void Response::_response_part(Config *conf, int sd)
                 if (location->getautoIndex() == "on")
                 {
                     // IF WAS DIR AND (AUTOINDEX: ON)
-                    _response_get_(conf, sd, _generate_autoindex(dir, sd), 200);
+                    cout << "DIR on\n";
+                    _generate_content(location, conf, fd, dir, &file, FOLDER_ON);
+                    cout << _content << endl;
                 }
                 else
                 {
                     // IF WAS DIR AND (AUTOINDEX: OFF)
-                    cout << "dir off \n";
-                    string str =  _generate_index(location); 
-                    if(str.empty())
-                        _response_errors_(conf, sd, 404);
-                    _response_index_(conf, sd, str, 200);
+                    _generate_content(location, conf, fd, dir, &file, FOLDER_OFF);
                 }
             else
-                {
-                    // IF WAS FILE 
-                    stringstream ssa;
-                    ssa << file.rdbuf();
-                    string str = ssa.str();
-                    vector<string>  vec;
-                    cout << url << str <<  "\n";
-                    string content = _generate_code(conf, sd, str, vec, _code_status(200), _content_type("text"));
-                    _send_reponse(content, sd);
-                }
+            {
+                // IF WAS FILE
+                _generate_content(location, conf, fd, dir, &file, FILE);
+            }
+            if(request[fd]->getMethod() == "POST" && !request[fd]->getBody().empty())
+            {
+                // UPLOAD
+                ofstream file(location->getUploadDir() + "/" + request[fd]->getFilename());
+                file << request[fd]->getBody();
+            }
         }
         else
-            _response_errors_(conf, sd, 404);
+        {
+            _generate_content(location, conf, fd, dir, &file, ERROR_404);
+            cout << "not found no dir no file\n";
+            return;
+        }
     }
 }

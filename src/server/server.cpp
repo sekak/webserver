@@ -1,5 +1,6 @@
 #include "server.hpp"
 #include <fcntl.h>
+#include <poll.h>
 
 #define MAX_CLIENT 10
 #define MAX_SERVER 1
@@ -9,27 +10,17 @@ Server::Server(Config *conf)
     initiate_server(conf);
 }
 
-Server::~Server()
-{
-
-}
-
+Server::~Server() {}
 
 void Server::initiate_server(Config *conf)
 {
-    std::map<string, Location*>     location = conf->getLocation();
+    std::map<string, Location *> location = conf->getLocation();
     struct sockaddr_in              sockAddr[MAX_SERVER], clientAddr;
     socklen_t                       addrSize, lenCli;
-    fd_set                          readfds, writefds;
     int                             serverSockets[MAX_SERVER];
-    int                             clientSockets[MAX_CLIENT] = {0};
-    int                             newClient;
     int                             reuse;
-    int                             maxSocket;
-    int                             monitor;
-    int                             newSocket;
-    // int t = 0;
-    
+
+
     addrSize = sizeof(sockAddr);
     // CREATE SOCKET SERVER
     for (int i = 0; i < MAX_SERVER; i++)
@@ -71,90 +62,60 @@ void Server::initiate_server(Config *conf)
         }
     }
 
+    string str;
     lenCli = sizeof(clientAddr);
+    vector<pollfd> fds(1);
+    fds[0].events = POLLIN;
+    fds[0].fd = serverSockets[0];
+
     while (true)
     {
-
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-        maxSocket = serverSockets[0];
-        for (int i = 0; i < MAX_SERVER; i++)
+        int activity = poll(fds.data(), fds.size(), -1);
+        if (activity < 0)
         {
-            FD_SET(serverSockets[i], &readfds);
-            if (serverSockets[i] > maxSocket)
-                maxSocket = serverSockets[i];
+            perror("poll");
+            break;
         }
 
-        for (int i = 0; i < MAX_CLIENT; i++)
+        if (fds[0].revents & POLLIN)
         {
-            int client = clientSockets[i];
-            if (client > 0)
+            int newSocket = accept(serverSockets[0], (struct sockaddr *)&clientAddr, &lenCli);
+            if (newSocket < 0)
             {
-                FD_SET(client, &readfds);
-                FD_SET(client, &writefds);
-                if (client > maxSocket)
-                    maxSocket = client;
+                perror("accept");
+                break;
             }
+            conf->_clients[newSocket] = new Client;
+            fds.push_back({newSocket, POLLIN | POLLOUT});
+            cout << "Add  New Socket: [" << newSocket << "]" << endl;
         }
-
-        // cout << "\n\n*********select1*********\n\n";
-        monitor = select(maxSocket + 1, &readfds, &writefds, NULL, NULL);
-        // cout << "*********select2*/*******";
-
-        if (monitor < 0)
+        // string res;
+        for (size_t i = 1; i < fds.size(); i++)
         {
-            perror("Select");
-            for (int j = 0; j < MAX_SERVER; j++)
-                close(serverSockets[j]);
-            exit(EXIT_FAILURE);
-        }
-
-        for (int i = 0; i < MAX_SERVER; i++)
-        {
-            if (FD_ISSET(serverSockets[i], &readfds))
+            int fd = fds[i].fd;
+            if (fds[i].revents & POLLIN)
             {
-                newSocket = accept(serverSockets[i], (struct sockaddr *)&clientAddr, &lenCli);
-                if (newSocket < 0)
+                conf->_clients[fd]->setRequest(fd, conf);
+                if (conf->_clients[fd]->reset_values)
                 {
-                    perror("Select");
-                    for (int j = 0; j < MAX_SERVER; i++)
-                        close(serverSockets[j]);
-                    exit(EXIT_FAILURE);
+                    close(fd);
+                    fds.erase(fds.begin() + i);
+                    conf->_clients[fd]->_FullRequest.clear();
+                    cout << fd << " Connection closed \n";
+                    --i;
                 }
-                for (int j = 0; j < MAX_CLIENT; j++)
-                {
-                    if (clientSockets[j] == 0)
-                    {
-                        cout << newSocket <<"*********accept*********";
-                        fcntl(newSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-                        clientSockets[j] = newSocket;
-                        break;
-                    }
-                }
+                
             }
-        }
-
-        for (int i = 0; i < MAX_CLIENT; i++)
-        {
-            map<int,Client *>  cli  = conf->_getClientsReq();
-            if (FD_ISSET(clientSockets[i], &readfds))
+            else if (conf->_clients[fd] && conf->_clients[fd]->_isFinished == 1)
             {
-                    // cout << cli.size() << "\n";
-                    if(conf->_setClientReq(clientSockets[i]))
-                    {
-                        cli.erase(clientSockets[i]);
-                        close(clientSockets[i]);
-                        clientSockets[i] = 0;
-                        break;
-                    }
+                Response   response;
+                cout << "POLLOUT\n";
+                response._response_part(conf, fd);
+                response._send(conf,fd);
+                conf->_clients[fd]->_FullRequest.clear(); // clear request to get new
+                conf->_clients[fd]->_isFinished = 0;
             }
-            else if(cli[clientSockets[i]] && cli[clientSockets[i]]->_isFinished)
-            {
-                conf->_set_response(clientSockets[i]);
-                send(clientSockets[i], "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\nContent-Length: 13\r\n\r\n<h1>hello</h1>\r\n", 103, 0);
-                clientSockets[i] = 0;
-            }
+                
         }
     }
-
 }

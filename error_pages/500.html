@@ -11,22 +11,57 @@
         }
         .container{
             height: 100vh;
-            background-color: rgb(217, 217, 217);
+            width: 100vw;
+            display: flex;
+            justify-content: center;
         }
         .wrapper{
+            width: 100%;
+            max-width: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100%;
             color: crimson;
+            flex-direction: column;
+            text-align: start;
         }
+        .S500{
+            font-size: 150px;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            gap: 10px;
+            color: gray;
+            
+        }
+        .s500{
+            font-size: 25px;
+            color: rgb(220, 20, 20);
+            font-weight: 500;
+        }
+        .items500{
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+            color: rgb(92, 92, 92);
+            font-size: 20px;
+            font-weight: 400;
+        }
+        
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="wrapper">
-            <h1>Internal Server Error</h1>
+            <h1 class="S500">500<span class="s500">Internal server</span></h1>
+            <div class="items500">
+                <p>Oops, somthing went wrong.</p>
+                <p>The server encountered an internal error and was unable to complete your request!</p>
+                <p>Try to refresh this page</p>
+            </div>
         </div>
     </div>
 </body>
