@@ -7,6 +7,7 @@
 Response::Response()
 {
     _code_status = 0;
+    _support_cgi = 0;
     _length = 0;
     _type_of_content = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8";
 }
@@ -63,8 +64,8 @@ Location *Response::_check_location(Config *conf, string path)
         {
             if (url == it->first || url + "/" == it->first)
             {
-                cout << "url: (" << url << ")"
-                 << "    it: (" << it->first << ")\n";
+                // cout << "url: (" << url << ")"
+                //  << "    it: (" << it->first << ")\n";
                 return it->second;
             }
         }
@@ -103,18 +104,21 @@ void Response::_response_part(Config *conf, int fd)
         // check if url found in root
         url = location->getRoot() + request[fd]->getUrl();
         check_extentsion(request[fd]->getUrl());
-        cout << url << endl;
-        ifstream file(url);
         dir = opendir(url.c_str());
-        if (dir || file.good())
+        ifstream file(url);
+        if(request[fd]->getUrl() == "/favicon.ico")
+        {
+            _favicon = "favicon";
+            _generate_content(location, conf, fd, dir, &file, FILE);
+
+        }
+        else if (dir || file.good())
         {
             if (dir)
                 if (location->getautoIndex() == "on")
                 {
                     // IF WAS DIR AND (AUTOINDEX: ON)
-                    cout << "DIR on\n";
                     _generate_content(location, conf, fd, dir, &file, FOLDER_ON);
-                    cout << _content << endl;
                 }
                 else
                 {
@@ -136,7 +140,6 @@ void Response::_response_part(Config *conf, int fd)
         else
         {
             _generate_content(location, conf, fd, dir, &file, ERROR_404);
-            cout << "not found no dir no file\n";
             return;
         }
     }

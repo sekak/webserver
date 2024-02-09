@@ -17,14 +17,14 @@ using namespace std;
 class Location
 {
 private:
-    vector<string>          _cgi;
+    string                  _autoIndex;
+    string                  _upload_dir;
     string                  _root;
     string                  _path;
     string                  _name;
     vector<string>          _methods;
     vector<string>          _indexes;
-    string                  _autoIndex;
-    string                  _upload_dir;
+    vector<string>          _cgi;
 
 public:
     Location();

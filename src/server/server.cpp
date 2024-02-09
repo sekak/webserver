@@ -14,13 +14,14 @@ Server::~Server() {}
 
 void Server::initiate_server(Config *conf)
 {
-    std::map<string, Location *> location = conf->getLocation();
+    std::map<string, Location *>    location;
     struct sockaddr_in              sockAddr[MAX_SERVER], clientAddr;
     socklen_t                       addrSize, lenCli;
     int                             serverSockets[MAX_SERVER];
     int                             reuse;
 
 
+    location = conf->getLocation();
     addrSize = sizeof(sockAddr);
     // CREATE SOCKET SERVER
     for (int i = 0; i < MAX_SERVER; i++)
@@ -104,18 +105,16 @@ void Server::initiate_server(Config *conf)
                     cout << fd << " Connection closed \n";
                     --i;
                 }
-                
             }
             else if (conf->_clients[fd] && conf->_clients[fd]->_isFinished == 1)
             {
                 Response   response;
-                cout << "POLLOUT\n";
+                // cout << "POLLOUT\n";
                 response._response_part(conf, fd);
                 response._send(conf,fd);
                 conf->_clients[fd]->_FullRequest.clear(); // clear request to get new
                 conf->_clients[fd]->_isFinished = 0;
             }
-                
         }
     }
 }

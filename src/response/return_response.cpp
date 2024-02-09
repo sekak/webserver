@@ -37,7 +37,7 @@ void Response::_send(Config *conf, int fd)
     string response;
     header += _content;
     int size = header.size();
-    cout <<"RESPONSE=>" << fd << "\n" << header << size << "<-";
+    // cout <<"RESPONSE=>" << fd << "\n" << header << size << "<-";
     send(fd, header.c_str(), size, 0);
 }
 
@@ -72,25 +72,24 @@ void Response::generate_html_autoindex(Config *conf, int fd)
         tmp += "<div class=\"item\"><span class=\"name\">" + _content_autoIndex[i] + "</span><a class=\"url\" href=\"" + conf->_requestOfClient[fd]->getUrl() + slach  + _content_autoIndex[i] + "\"> Visit </a> </div>\n";
         i++;
     }
-    cout << "tmp =>" << tmp << endl;
+    // cout << "tmp =>" << tmp << endl;
     tmp += " </div></div></body></html>";
     _content = tmp;
 }
 
 
 // GENERATE AND RETURN REPONSE FOR CLIENT (CASE ERRORS)
-void Response::_response_errors_(Config *conf, int sd, int code)
+void Response::_response_errors_(Config *conf, int sd)
 {
     map<string, string> errors;
     stringstream sa;
     vector<string> vec;
     errors = conf->getErrors();
-    ifstream errFile(errors[to_string(code)]);
-    ifstream err_File("errorsc/" + to_string(code) + ".html");
+    ifstream errFile(errors[to_string(_code_status)]);
+    ifstream err_File("errors/" + to_string(_code_status) + ".html");
 
     if (errFile.good())
     {
-        cout << "hay\n";
         sa << errFile.rdbuf();
         _content = sa.str();
        
@@ -109,7 +108,15 @@ void  Response::content_file(ifstream *file)
 {
     string          res;
     stringstream    ss;
-
+    if(_favicon == "favicon")
+    {
+        ifstream file1("favicon.ico");
+        ss <<  file1.rdbuf();
+        res = ss.str();
+        _content = res;
+        _favicon = "";
+        return;
+    }
     ss << file->rdbuf();
     res = ss.str();
     _content = res;
@@ -137,14 +144,14 @@ void Response::_generate_index(Location *location)
         ifstream file(location->getRoot() + "/" + indexes[i]);
         if (file.good())
         {
-            cout << indexes[i] << "9wd\n";// remove
+            // cout << indexes[i] << "9wd\n";// remove
             _file_index = location->getRoot() + "/" + indexes[i];
         }
     }
     if(_file_index.empty())
     {
         _code_status = ERROR_404;
-        cout << "not found index \n";// remove
+        // cout << "not found index \n";// remove
     }
     else 
     {
@@ -153,26 +160,39 @@ void Response::_generate_index(Location *location)
     }
 }
 
+void Response::_check_cgi(Location *location, string url)
+{
+    vector<string> vec = location->getCgi();
+    if(!vec.empty())
+    {
+        if(url.find(".php") != string::npos && vec[0] == ".php")
+            _support_cgi = 1;
+        else if(url.find(".py") != string::npos && vec[0] == ".py")
+            _support_cgi = 1;
+    }
+}
+
 void        Response::_generate_content(Location *location, Config* conf,int fd,DIR *dir,ifstream *file,int type)
 {
-    string url;
-    map<int, Request *> request;
+    string                  url;
+    map<int, Request *>     request;
+
     request = conf->_requestOfClient;
-    url =location->getRoot() + request[fd]->getUrl();
+    url = location->getRoot() + request[fd]->getUrl();
+    request[fd]->showAllData();
     if(type == FILE)
     {
         //check extension after
-        if(url.find(".php") != string::npos || url.find(".py") != string::npos)
+        _check_cgi(location, url);
+        if((url.find(".php") != string::npos || url.find(".py") != string::npos) && _support_cgi)
         {
             Cgi cgi;
             _content = (cgi.execute_cgi(location, conf, fd, url));
             if(_content == "error")
             {
                 _code_status = 500; 
-                _response_errors_(conf, fd, _code_status);
-                // cout << url<<endl;
+                _response_errors_(conf, fd);
             }
-            // cout << "content==>" << cgi.execute_cgi(location, conf, fd, url) << "<=\n";
         }
         else
             content_file(file);
@@ -180,19 +200,20 @@ void        Response::_generate_content(Location *location, Config* conf,int fd,
     }
     else if(type == FOLDER_ON)
     {
-        cout << "generate_content = folder_on\n";
+        // cout << "generate_content = folder_on\n";
         content_autoIndex(conf, fd, dir);
     }
     else if(type == FOLDER_OFF)
     {
-        cout << "generate_content = folder_off\n";
+        // cout << "generate_content = folder_off\n";
         _generate_index(location);
     }
     else 
     {
-        cout  << "Error";
-        _response_errors_(conf, fd, type);
-        cout << _content << endl;
+        // cout  << "Error";
+        _code_status = type; 
+        _response_errors_(conf, fd);
+        // cout << _content << endl;
     }
 }
  

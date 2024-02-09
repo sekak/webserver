@@ -110,10 +110,10 @@
         <div id="alert">
             <span>Choose file and upload!</span>
         </div>
-        <h1 style="margin-top: 30px;">Upload (WebServ)</h1>
+        <h2 style="margin-top: 50px;">Upload (WebServ)</h2>
         <div class="wrapper">
             <div class="items">
-                <form enctype="multipart/form-data" action="http://localhost:4242" method="post">
+                <form enctype="multipart/form-data" action="http://localhost:4242/page1" method="post">
                     <input type="file" name="file" class="filenmae" />
                     <input class="url" type="submit"id="button" />
                 </form>
@@ -129,6 +129,8 @@
                     message.style.display = "none"
                 }, 3000
             )
+            console.log("object")
+
         })
     </script>
 </body>
