@@ -10,7 +10,7 @@
     <h1>PHP and HTML Example</h1>
 
     <p>This is a simple PHP and HTML example.</p>
-
+ 
     <?php
     // PHP code starts here
     $message = "Hello, PHP!";
