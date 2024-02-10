@@ -22,7 +22,7 @@ string Cgi::execute_cgi(Location *location, Config *conf, int fd, string url)
         perror("fork");
     else if (pid == 0)
     {
-        cout << url << "  " << path <<endl;
+        // cout << url << "  " << path <<endl;
         close(pipes[0]);
         dup2(pipes[1], 1);
         execl(path.c_str(), path.c_str(), url.c_str(), NULL);

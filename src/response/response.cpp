@@ -34,9 +34,7 @@ string Response::_deletePartOfUrl(string url, int i, int len)
     {
         int c = url.find("/", len - i);
         if (c != string::npos)
-        {
             return url.substr(0, c);
-        }
     }
     return 0;
 }
@@ -63,11 +61,7 @@ Location *Response::_check_location(Config *conf, string path)
         for (map<string, Location *>::iterator it = location.begin(); it != location.end(); it++)
         {
             if (url == it->first || url + "/" == it->first)
-            {
-                // cout << "url: (" << url << ")"
-                //  << "    it: (" << it->first << ")\n";
                 return it->second;
-            }
         }
     }
     return 0;

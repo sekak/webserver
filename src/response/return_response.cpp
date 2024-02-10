@@ -30,23 +30,20 @@ string Response::generate_header(Config *config, int fd)
     return ss.str();
 }
 
-// ==>> SEND
-void Response::_send(Config *conf, int fd)
-{
-    string header =  generate_header(conf, fd);
-    string response;
-    header += _content;
-    int size = header.size();
-    // cout <<"RESPONSE=>" << fd << "\n" << header << size << "<-";
-    send(fd, header.c_str(), size, 0);
-}
-
-
 string generate_header(string status, string type)
 {
     string header;
     header = "HTTP/1.1 " + status + "\r\nContent-Type: " + type + "\r\nServer: WebServ/1.1\r\nConnection: Keep-Alive\r\n";
     return header;
+}
+
+// ==>> SEND
+void Response::_send(Config *conf, int fd)
+{
+    string header =  generate_header(conf, fd);
+    header += _content;
+    int size = header.size();
+    send(fd, header.c_str(), size, 0);
 }
 
 void Response::generate_html_autoindex(Config *conf, int fd)
@@ -72,7 +69,6 @@ void Response::generate_html_autoindex(Config *conf, int fd)
         tmp += "<div class=\"item\"><span class=\"name\">" + _content_autoIndex[i] + "</span><a class=\"url\" href=\"" + conf->_requestOfClient[fd]->getUrl() + slach  + _content_autoIndex[i] + "\"> Visit </a> </div>\n";
         i++;
     }
-    // cout << "tmp =>" << tmp << endl;
     tmp += " </div></div></body></html>";
     _content = tmp;
 }
@@ -92,7 +88,6 @@ void Response::_response_errors_(Config *conf, int sd)
     {
         sa << errFile.rdbuf();
         _content = sa.str();
-       
     }
     else if(err_File.good())
     {
@@ -143,16 +138,10 @@ void Response::_generate_index(Location *location)
     {
         ifstream file(location->getRoot() + "/" + indexes[i]);
         if (file.good())
-        {
-            // cout << indexes[i] << "9wd\n";// remove
             _file_index = location->getRoot() + "/" + indexes[i];
-        }
     }
     if(_file_index.empty())
-    {
         _code_status = ERROR_404;
-        // cout << "not found index \n";// remove
-    }
     else 
     {
         ifstream file(_file_index);
@@ -179,11 +168,11 @@ void        Response::_generate_content(Location *location, Config* conf,int fd,
 
     request = conf->_requestOfClient;
     url = location->getRoot() + request[fd]->getUrl();
-    request[fd]->showAllData();
+    // request[fd]->showAllData();
     if(type == FILE)
     {
         //check extension after
-        _check_cgi(location, url);
+            _check_cgi(location, url);
         if((url.find(".php") != string::npos || url.find(".py") != string::npos) && _support_cgi)
         {
             Cgi cgi;
@@ -196,7 +185,6 @@ void        Response::_generate_content(Location *location, Config* conf,int fd,
         }
         else
             content_file(file);
-
     }
     else if(type == FOLDER_ON)
     {
@@ -210,10 +198,8 @@ void        Response::_generate_content(Location *location, Config* conf,int fd,
     }
     else 
     {
-        // cout  << "Error";
         _code_status = type; 
         _response_errors_(conf, fd);
-        // cout << _content << endl;
     }
 }
  
